@@ -1,4 +1,5 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -14,8 +15,18 @@ import {
   Radio,
   RadioGroup,
   Progress,
+  Accordion,
+  AccordionItem,
+  Card,
+  CardHeader,
+  CardBody,
 } from "@nextui-org/react";
-import { ChevronRight, ChevronLeft } from "lucide-react";
+import {
+  ChevronRight,
+  ChevronLeft,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 
 const API_BASE_URL = "http://localhost:5000/api";
 
@@ -39,6 +50,7 @@ export default function MultiStepForm() {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const [expandedRooms, setExpandedRooms] = useState({});
 
   const [formData, setFormData] = useState({
     name: "",
@@ -64,6 +76,12 @@ export default function MultiStepForm() {
       const data = await response.json();
       if (data && typeof data === "object" && Object.keys(data).length > 0) {
         setFormOptions(data);
+        setExpandedRooms(
+          Object.keys(data).reduce(
+            (acc, room) => ({ ...acc, [room]: false }),
+            {}
+          )
+        );
       } else {
         console.error("Invalid data structure received:", data);
         setFormOptions({});
@@ -112,6 +130,7 @@ export default function MultiStepForm() {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const response = await fetch(`${API_BASE_URL}/addCustomOption`, {
         method: "POST",
@@ -128,8 +147,7 @@ export default function MultiStepForm() {
       const data = await response.json();
 
       if (!response.ok) {
-        setErrors({ addOption: data.error });
-        return;
+        throw new Error(data.error);
       }
 
       setFormOptions((prev) => ({
@@ -139,7 +157,9 @@ export default function MultiStepForm() {
       setNewOption("");
       onClose();
     } catch (error) {
-      setErrors({ addOption: "Failed to add option. Please try again." });
+      setErrors({ addOption: error.message });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -235,6 +255,10 @@ export default function MultiStepForm() {
     if (step > 1) setStep(step - 1);
   };
 
+  const toggleRoomExpansion = (room) => {
+    setExpandedRooms((prev) => ({ ...prev, [room]: !prev[room] }));
+  };
+
   const renderStepContent = () => {
     switch (step) {
       case 1:
@@ -252,7 +276,7 @@ export default function MultiStepForm() {
                   key={bhk}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className={`border-2 p-4 rounded-lg cursor-pointer transition-all duration-300 ${
+                  className={`border-2 p-4 rounded-lg cursor-pointer transition-all duration-300 m-3 ${
                     selectedBHK === bhk
                       ? "border-amber-500 bg-amber-50"
                       : "border-gray-300 hover:border-amber-300"
@@ -275,23 +299,16 @@ export default function MultiStepForm() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="space-y-6"
+            className="space-y-4 max-h-[60vh] overflow-y-auto pr-4"
           >
-            {Object.entries(formOptions).length > 0 ? (
-              Object.entries(formOptions).map(([room, options]) => (
-                <motion.div
+            <Accordion variant="shadow">
+              {Object.entries(formOptions).map(([room, options]) => (
+                <AccordionItem
                   key={room}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="bg-white rounded-lg shadow-sm border border-gray-200"
+                  aria-label={room}
+                  title={room.replace(/([A-Z])/g, " $1").trim()}
                 >
-                  <div className="p-4 border-b border-gray-200">
-                    <h3 className="text-lg font-semibold">
-                      {room.replace(/([A-Z])/g, " $1").trim()}
-                    </h3>
-                  </div>
-                  <div className="p-4">
+                  <div className="p-2">
                     {room === "WholeHousePainting" ? (
                       <div>
                         <label
@@ -342,16 +359,25 @@ export default function MultiStepForm() {
                             </Checkbox>
                           ))
                         )}
+                        {room !== "Kitchen" &&
+                          room !== "WholeHousePainting" && (
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                setCurrentRoom(room);
+                                onOpen();
+                              }}
+                              className="mt-2 col-span-2"
+                            >
+                              Add Custom Option
+                            </Button>
+                          )}
                       </div>
                     )}
                   </div>
-                </motion.div>
-              ))
-            ) : (
-              <div className="text-center text-gray-500">
-                No options available. Please go back and select a BHK type.
-              </div>
-            )}
+                </AccordionItem>
+              ))}
+            </Accordion>
           </motion.div>
         );
 
@@ -363,128 +389,53 @@ export default function MultiStepForm() {
             exit={{ opacity: 0, y: -20 }}
             className="space-y-6 max-w-md mx-auto"
           >
-            <div>
-              <label
-                htmlFor="name"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Name
-              </label>
-              <Input
-                id="name"
-                type="text"
-                placeholder="Enter your name"
-                value={formData.name}
-                onChange={handleInputChange}
-                variant="bordered"
-                isInvalid={!!errors.name}
-                errorMessage={errors.name}
-                classNames={{
-                  base: "max-w-xs",
-                }}
-                aria-label="Name"
-                aria-invalid={!!errors.name}
-                aria-describedby={errors.name ? "name-error" : undefined}
-              />
-              {errors.name && (
-                <span id="name-error" className="text-red-500 text-xs">
-                  {errors.name}
-                </span>
-              )}
-            </div>
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Email
-              </label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="Enter your email"
-                value={formData.email}
-                onChange={handleInputChange}
-                variant="bordered"
-                isInvalid={!!errors.email}
-                errorMessage={errors.email}
-                classNames={{
-                  base: "max-w-xs",
-                }}
-                aria-label="Email"
-                aria-invalid={!!errors.email}
-                aria-describedby={errors.email ? "email-error" : undefined}
-              />
-              {errors.email && (
-                <span id="email-error" className="text-red-500 text-xs">
-                  {errors.email}
-                </span>
-              )}
-            </div>
-            <div>
-              <label
-                htmlFor="phoneNumber"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Phone Number
-              </label>
-              <Input
-                id="phoneNumber"
-                type="tel"
-                placeholder="Enter phone number"
-                value={formData.phoneNumber}
-                onChange={handleInputChange}
-                variant="bordered"
-                isInvalid={!!errors.phoneNumber}
-                errorMessage={errors.phoneNumber}
-                classNames={{
-                  base: "max-w-xs",
-                }}
-                maxLength={10}
-                pattern="[0-9]*"
-                aria-label="Phone Number"
-                aria-invalid={!!errors.phoneNumber}
-                aria-describedby={
-                  errors.phoneNumber ? "phoneNumber-error" : undefined
-                }
-              />
-              {errors.phoneNumber && (
-                <span id="phoneNumber-error" className="text-red-500 text-xs">
-                  {errors.phoneNumber}
-                </span>
-              )}
-            </div>
-            <div>
-              <label
-                htmlFor="propertyName"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Property Name
-              </label>
-              <Input
-                id="propertyName"
-                type="text"
-                placeholder="Enter property name"
-                value={formData.propertyName}
-                onChange={handleInputChange}
-                variant="bordered"
-                isInvalid={!!errors.propertyName}
-                errorMessage={errors.propertyName}
-                classNames={{
-                  base: "max-w-xs",
-                }}
-                aria-label="Property Name"
-                aria-invalid={!!errors.propertyName}
-                aria-describedby={
-                  errors.propertyName ? "propertyName-error" : undefined
-                }
-              />
-              {errors.propertyName && (
-                <span id="propertyName-error" className="text-red-500 text-xs">
-                  {errors.propertyName}
-                </span>
-              )}
-            </div>
+            <Card className="p-6 space-y-6">
+              <CardHeader>
+                <h3 className="text-2xl font-semibold">Personal Information</h3>
+              </CardHeader>
+              <CardBody className="space-y-4">
+                <Input
+                  id="name"
+                  label="Name"
+                  placeholder="Enter your name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  isInvalid={!!errors.name}
+                  errorMessage={errors.name}
+                  fullWidth
+                />
+                <Input
+                  id="email"
+                  label="Email"
+                  placeholder="Enter your email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  isInvalid={!!errors.email}
+                  errorMessage={errors.email}
+                  fullWidth
+                />
+                <Input
+                  id="phoneNumber"
+                  label="Phone Number"
+                  placeholder="Enter phone number"
+                  value={formData.phoneNumber}
+                  onChange={handleInputChange}
+                  isInvalid={!!errors.phoneNumber}
+                  errorMessage={errors.phoneNumber}
+                  fullWidth
+                />
+                <Input
+                  id="propertyName"
+                  label="Property Name"
+                  placeholder="Enter property name"
+                  value={formData.propertyName}
+                  onChange={handleInputChange}
+                  isInvalid={!!errors.propertyName}
+                  errorMessage={errors.propertyName}
+                  fullWidth
+                />
+              </CardBody>
+            </Card>
             {errors.submit && (
               <p className="text-red-500 text-sm mt-4">{errors.submit}</p>
             )}
@@ -577,7 +528,7 @@ export default function MultiStepForm() {
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalContent>
           <ModalHeader className="flex flex-col gap-1">
-            Add Custom Option
+            Add Custom Option for {currentRoom}
           </ModalHeader>
           <ModalBody>
             <Input

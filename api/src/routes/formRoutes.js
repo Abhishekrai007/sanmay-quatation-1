@@ -1,6 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const Form = require('../models/Form');
+const session = require('express-session');
+
+router.use(session({
+    secret: "dasdasdasdsad",
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false } // set to true if using https
+}));
 
 const options = {
     '1 BHK': {
@@ -8,7 +16,7 @@ const options = {
         Kitchen: ['L Shape', 'U Shape', '|| Shape', 'G Shape', '| Shape'],
         MasterBedroom: ['Wardrobe + Lofts', 'Bed', 'Bed Side Tables', 'Dresser', 'Study'],
         WholeHousePainting: ['Enter Carpet Area'],
-        FalseCeilingElectrical: ['Fire pipe Boxing', 'Basic', 'peripheral', 'Custom Design']
+        FalseCeilingElectrical: ['Fire pipe Boxing', 'Basic', 'Peripheral', 'Custom Design']
     },
     '2 BHK': {
         LivingRoom: ['TV Unit', 'Sofa', 'Crockery Unit', 'Shoe Rack', 'Console'],
@@ -16,7 +24,7 @@ const options = {
         MasterBedroom: ['Wardrobe + Lofts', 'Bed', 'Bed Side Tables', 'Dresser', 'Study'],
         CommonBedroom: ['Wardrobe + Lofts', 'Bed', 'Bed Side Tables', 'Dresser', 'Study'],
         WholeHousePainting: ['Enter Carpet Area'],
-        FalseCeilingElectrical: ['Fire pipe Boxing', 'Basic', 'peripheral', 'Custom Design']
+        FalseCeilingElectrical: ['Fire pipe Boxing', 'Basic', 'Peripheral', 'Custom Design']
     },
     '3 BHK': {
         LivingRoom: ['TV Unit', 'Sofa', 'Crockery Unit', 'Shoe Rack', 'Console'],
@@ -25,19 +33,32 @@ const options = {
         CommonBedroom: ['Wardrobe + Lofts', 'Bed', 'Bed Side Tables', 'Dresser', 'Study'],
         MasterBedroom2: ['Wardrobe + Lofts', 'Bed', 'Bed Side Tables', 'Dresser', 'Study'],
         WholeHousePainting: ['Enter Carpet Area'],
-        FalseCeilingElectrical: ['Fire pipe Boxing', 'Basic', 'peripheral', 'Custom Design']
+        FalseCeilingElectrical: ['Fire pipe Boxing', 'Basic', 'Peripheral', 'Custom Design']
     }
 };
 
+const userCustomOptions = {};
+
 router.get('/options/:bhkType', (req, res) => {
     const bhkType = decodeURIComponent(req.params.bhkType);
-    console.log("Requested BHK type:", bhkType);
+    const userId = req.session.id;
+
     if (!options[bhkType]) {
-        console.log("Invalid BHK type requested");
         return res.status(400).json({ error: 'Invalid BHK type' });
     }
-    console.log("Sending options for", bhkType, ":", options[bhkType]);
-    res.json(options[bhkType]);
+
+    const mergedOptions = JSON.parse(JSON.stringify(options[bhkType]));
+    if (userCustomOptions[userId] && userCustomOptions[userId][bhkType]) {
+        Object.keys(userCustomOptions[userId][bhkType]).forEach(category => {
+            if (mergedOptions[category]) {
+                mergedOptions[category] = [
+                    ...mergedOptions[category],
+                    ...userCustomOptions[userId][bhkType][category]
+                ];
+            }
+        });
+    }
+    res.json(mergedOptions);
 });
 
 router.post('/submit', async (req, res) => {
@@ -52,6 +73,8 @@ router.post('/submit', async (req, res) => {
 
 router.post('/addCustomOption', (req, res) => {
     const { bhkType, category, customOption } = req.body;
+    const userId = req.session.id;
+
     if (!bhkType || !category || !customOption) {
         return res.status(400).json({ error: 'All fields are required' });
     }
@@ -64,11 +87,20 @@ router.post('/addCustomOption', (req, res) => {
     if (customOption.length < 2 || customOption.length > 50) {
         return res.status(400).json({ error: 'Custom option must be between 2 and 50 characters' });
     }
-    if (options[bhkType][category].includes(customOption)) {
-        return res.status(400).json({ error: 'Option already exists' });
+
+    // Add custom option to user-specific storage
+    if (!userCustomOptions[userId]) {
+        userCustomOptions[userId] = {};
     }
-    options[bhkType][category].push(customOption);
-    res.json({ message: 'Custom option added successfully', updatedOptions: options[bhkType][category] });
+    if (!userCustomOptions[userId][bhkType]) {
+        userCustomOptions[userId][bhkType] = {};
+    }
+    if (!userCustomOptions[userId][bhkType][category]) {
+        userCustomOptions[userId][bhkType][category] = [];
+    }
+    userCustomOptions[userId][bhkType][category].push(customOption);
+
+    res.json({ message: 'Custom option added successfully', updatedOptions: [...options[bhkType][category], ...userCustomOptions[userId][bhkType][category]] });
 });
 
 module.exports = router;
