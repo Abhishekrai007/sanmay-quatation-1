@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "quixotic-card-428217-m6",
+  "private_key_id": "991872c2add4f45c32ec580764e2f99912b67a7d",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDPh/vCXs2xA039\n0+GOrj5KxerPOG4vjN2XA2tdGqZ0NbQ3JqL8HmKhrz2COJpKRSnGaHcvhk6A9QwG\nUia7Hpq3/++pq2wf4GATVeJBfNc9Stq3cVfWERg+duU2wDHyz8fYWI5qYwyi+3pm\nzvwX0c5AVouUUAGLlGpzoYhNhqurxT6PLXkZpZC1OH+REiMXC00g5gN5dY6wo1ET\nwNTXUQs39qFzUc87sO3rmjJvJTyx6Q5emG2IOPXcu5IP3nfHfNn3s3l612clE5rd\nPU/oGB1JN2se6RL6nc1kBvQtAPSLVf447WH44Akzb1naJcOLgPXUQIq1IrZhIUiP\nxXG+Q8uRAgMBAAECggEAAPeFOMFFprl5N4wxKipYUp4xcIhhcF9GTlnPD5P8NTZl\ngeGa3h8rc81j3/jGNJULPh1me2uIxMO01qKzWNPVAgkd42XPudD1zEvuI0Ki+L93\nMruYc9WIjgydF3A1y10kdTbpvZ0l20HeBB9FarxTgFaRjT4CLoBL2VYQqIEkHkdp\nfh2WoUqaBqcI9rn2HrpbVhI7gN+W5jIc27zts7zkQAU7B6OX6o4ozTaRp/vlYbWh\n1jnX41xQlUzzxD73MBkMC5HW6y+FTsEWJPjaQX0LEijzJ3lZEhhS1HqUvatXjnv8\n42cwFG4mSZBTQrTyd1ArBhUEflkawbOgj33pSX2O8QKBgQDxdasBVPFAjzAWKsHH\nVr7JcT8mShDDseWLFafW0MSonsYXYiWfa5DKW6LXVNzOLOEnSQGvkZT5tln2EI31\npo3U9v8/6NfYh27cJEmAwZJRhmHPmfIkWQ7+gxMa6pOGxWWD15o+7wH/Tgh8t4tM\nZqZjcv7LVBbML5ZHDSACuKPNfwKBgQDcB0aYAkY2gM+4aXNr8RY+BGpLfUonZvnQ\nvOEB8EBgtz/eTHU5MMLGLzx++I/zUm8hVZPaBQDRbuAn2UA25XzfmEbR3RaemEhS\ny64HUZc2oUemV9PSCFqb5noXpvgjlAQCKD9yutzgxiVVj/vbiX4P7zIsWP/PPzHp\np7NQOOYO7wKBgQDHVjUOrGleutcf9bx0LJDlDLDtk0ezxzGRWRduqHsyGaG/vC8D\nJXIrHOuaiVygeTyHiiXyI2WxoXEzSwdnPVDp999Ri5BmGajT5MEpoqSA2Uf2c0kL\n6NoQE3W6St3v7RaZeWzFd9tWQb2P+JbvQ+8pOs5OXeVUPBT8I0HB/Vx9UQKBgBId\ntz5E0asjJ/czF4HHs+EfU/ErO7PK0r7RDmWudl6AOA4BlZVD4oWW1hBOPuv12ZiR\nBz9oMg0MaABf7t2WP5XZX9tfrMEaILpQct+/ZAfnd5LGoHYmoe88JslTwhKL2Vik\nH7U+lXkcV26YEFCfHXYKZ8MnAMj7lwx59lWgmbCZAoGBAMxqkGEaAvoMpmvdEMKV\nJy/gza+stKWcvgyCHjh/9xNYmZcYOK2hOq4kbAKoRmtqL5o2OkLSsL6eZK8FRkjx\nYXedF6ysVy1VPYtxxeaW62Sv62X8giOfg5jixNDuROUdfvyihPACK65lx8pvr/se\nLSMYr9aOlbm0HMHgcFdyTWQI\n-----END PRIVATE KEY-----\n",
+  "client_email": "warsto-quotation@quixotic-card-428217-m6.iam.gserviceaccount.com",
+  "client_id": "100654738832780474540",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/warsto-quotation%40quixotic-card-428217-m6.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

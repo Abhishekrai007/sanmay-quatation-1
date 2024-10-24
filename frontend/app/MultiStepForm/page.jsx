@@ -27,6 +27,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
+import Link from "next/link";
 
 const API_BASE_URL = "http://localhost:5000/api";
 
@@ -49,6 +50,11 @@ export default function MultiStepForm() {
   const [currentRoom, setCurrentRoom] = useState("");
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [quotationLink, setQuotationLink] = useState("");
+  const [formSubmitted, setFormSubmitted] = useState(false);
+  const [quotationId, setQuotationId] = useState("");
+
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [expandedRooms, setExpandedRooms] = useState({});
 
@@ -65,7 +71,60 @@ export default function MultiStepForm() {
     }
   }, [selectedBHK]);
 
+  useEffect(() => {
+    const savedFormData = localStorage.getItem("formData");
+    if (savedFormData) {
+      const parsed = JSON.parse(savedFormData);
+      setSelectedBHK(parsed.selectedBHK || "");
+      setSelectedOptions(parsed.selectedOptions || {});
+      setCarpetArea(parsed.carpetArea || "");
+      setFormData(parsed.personalInfo || {});
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "formData",
+      JSON.stringify({
+        selectedBHK,
+        selectedOptions,
+        carpetArea,
+        personalInfo: formData,
+      })
+    );
+  }, [selectedBHK, selectedOptions, carpetArea, formData]);
+
+  useEffect(() => {
+    const savedFormData = localStorage.getItem("formData");
+    if (savedFormData) {
+      const parsed = JSON.parse(savedFormData);
+      setSelectedBHK(parsed.selectedBHK || "");
+      setCarpetArea(parsed.carpetArea || "");
+      setFormData(parsed.personalInfo || {});
+
+      // Store selected options temporarily
+      const storedOptions = parsed.selectedOptions || {};
+
+      // If there was a selected BHK, fetch options first
+      if (parsed.selectedBHK) {
+        fetch(
+          `${API_BASE_URL}/options/${encodeURIComponent(parsed.selectedBHK)}`
+        )
+          .then((response) => response.json())
+          .then((data) => {
+            setFormOptions(data);
+            // Now restore the selected options after options are loaded
+            setSelectedOptions(storedOptions);
+          })
+          .catch((error) => {
+            console.error("Error fetching options:", error);
+          });
+      }
+    }
+  }, []);
+
   const fetchOptions = async () => {
+    setIsLoading(true);
     try {
       const response = await fetch(
         `${API_BASE_URL}/options/${encodeURIComponent(selectedBHK)}`
@@ -87,6 +146,7 @@ export default function MultiStepForm() {
         setFormOptions({});
       }
     } catch (error) {
+      setIsLoading(false);
       console.error("Error fetching options:", error);
       setFormOptions({});
     }
@@ -94,13 +154,33 @@ export default function MultiStepForm() {
 
   const handleSelect = (bhk) => {
     setSelectedBHK(bhk);
-    setSelectedOptions({});
+    setSelectedOptions({}); // Clear previous selections
+
+    // Fetch new options
+    fetch(`${API_BASE_URL}/options/${encodeURIComponent(bhk)}`)
+      .then((response) => response.json())
+      .then((data) => {
+        setFormOptions(data);
+      })
+      .catch((error) => {
+        console.error("Error fetching options:", error);
+        setFormOptions({});
+      });
   };
 
   const handleOptionChange = (room, option) => {
     setSelectedOptions((prev) => {
-      if (room === "Kitchen") {
-        return { ...prev, [room]: [option] };
+      if (room === "Kitchen" || room === "FalseCeilingElectrical") {
+        if (prev[room]?.[0] === option) {
+          return {
+            ...prev,
+            [room]: [],
+          };
+        }
+        return {
+          ...prev,
+          [room]: [option],
+        };
       }
       const roomOptions = prev[room] || [];
       const updatedOptions = roomOptions.includes(option)
@@ -154,6 +234,10 @@ export default function MultiStepForm() {
         ...prev,
         [currentRoom]: [...(prev[currentRoom] || []), newOption.trim()],
       }));
+
+      // Automatically select the new option
+      handleOptionChange(currentRoom, newOption.trim());
+
       setNewOption("");
       onClose();
     } catch (error) {
@@ -197,6 +281,7 @@ export default function MultiStepForm() {
     return true;
   };
 
+  // In handleSubmit function of page.jsx
   const handleSubmit = async () => {
     if (step === 3) {
       if (!validateStep3()) {
@@ -223,10 +308,18 @@ export default function MultiStepForm() {
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.error || "Form submission failed");
+          throw new Error(
+            data.error || data.details || "Form submission failed"
+          );
         }
+        setQuotationId(data.quotationId);
 
-        setStep(1);
+        // Set quotation link and show success state
+        setQuotationLink(`/quotation/${data.quotationId}`);
+        setFormSubmitted(true);
+
+        // Clear form data
+        localStorage.removeItem("formData");
         setSelectedBHK("");
         setSelectedOptions({});
         setCarpetArea("");
@@ -236,7 +329,6 @@ export default function MultiStepForm() {
           phoneNumber: "",
           propertyName: "",
         });
-        alert("Form submitted successfully!");
       } catch (error) {
         setErrors({ submit: error.message });
       } finally {
@@ -330,7 +422,8 @@ export default function MultiStepForm() {
                       </div>
                     ) : (
                       <div className="grid grid-cols-2 gap-4">
-                        {room === "Kitchen" ? (
+                        {room === "Kitchen" ||
+                        room === "FalseCeilingElectrical" ? (
                           <RadioGroup
                             label={`Select ${room} option`}
                             value={selectedOptions[room]?.[0] || ""}
@@ -360,7 +453,8 @@ export default function MultiStepForm() {
                           ))
                         )}
                         {room !== "Kitchen" &&
-                          room !== "WholeHousePainting" && (
+                          room !== "WholeHousePainting" &&
+                          room !== "FalseCeilingElectrical" && (
                             <Button
                               size="sm"
                               onClick={() => {
@@ -521,6 +615,21 @@ export default function MultiStepForm() {
                 </>
               )}
             </Button>
+            {formSubmitted && quotationId && (
+              <div className="mt-6 p-4 bg-green-50 rounded-lg">
+                <p className="text-green-800 font-medium mb-3">
+                  Form submitted successfully!
+                </p>
+                <Link
+                  target="_blank"
+                  href={`/quotation/${quotationId}`}
+                  className="inline-flex items-center px-4 py-2 bg-amber-500 text-white rounded-md hover:bg-amber-600 transition-colors"
+                >
+                  View Your Quotation
+                  <ChevronRight className="ml-2 h-4 w-4" />
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </main>
